@@ -2,39 +2,31 @@
 
 Retrieve data from sfgov's API with requests.
 
+Run with the -h argument for help. All arguments must be included.
+
 """
 
 import json
 import requests
+import argparse
 
-oauth_filename = 'oauth.auth'
+parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
+parser.add_argument('--url', type=str, help='source URL')
+parser.add_argument('--outfile', type=str, help='name of output file')
+parser.add_argument('--auth', type=str, help='auth string')
 
-target_url = 'https://data.sfgov.org/resource/g8m3-pdis.json'
+# use args.url, args.auth, and args.outfile
+args = parser.parse_args()
 
-def generate_output_file(filename="unspecified_project"):
-    """
-    Generate a file using provided arguments and a time
-    """
-    return "out.dat"
-
-output_filename = generate_output_file()
-
-empty_credentials = { "username" : "", "password" : "" }
-
-with open(oauth_filename, 'r') as f:
-    credentials = json.load(f)
-
-#credentials = empty_credentials
-
-socrata_headers = { 'X-App-Token' : credentials['username'] }
-r = requests.get(url=target_url, headers=socrata_headers)
+socrata_headers = { 'X-App-Token' : args.auth }
+r = requests.get(url=args.url, headers=socrata_headers)
 
 print r.status_code
 print r.headers['content-type']
 print r.encoding
 #print r.text
 
-with open(output_filename, 'w') as f:
+with open(args.outfile, 'w') as f:
     for chunk in r.iter_content(1024):
         f.write( chunk )
 
