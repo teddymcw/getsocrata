@@ -47,7 +47,7 @@ def get_socrata_data(user_auth, source_url, target_file):
             f.write( chunk )
 
 
-if __name__ == __main__:
+if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
