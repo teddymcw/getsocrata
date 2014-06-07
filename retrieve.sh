@@ -6,4 +6,4 @@ outfile="out.dat"
 # store authentication as a string in a .auth file
 source ./sh_auth.auth
 
-python sfdata-socrata.py --url $url --outfile $outfile --auth $auth
+python getsocrata.py --url $url --outfile $outfile --auth $auth
