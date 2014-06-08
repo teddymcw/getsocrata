@@ -16,6 +16,9 @@ This specific setup has been tested on SFgov's Socrata API.
 This uses the deprecated authentication format with no callback URL. Socrata may 
 discontinue this request type in the future in favor of a callback URL method.
 
+    # r.json() will return a list of dictionaries. So, in order to join them, we just join the lists.
+    # example: full_document.extend(r.json()) where full_document is initiated from the first list retrieved.
+    # print r.json()
 """
 
 import json
@@ -23,7 +26,7 @@ import requests
 import argparse
 
 
-def get_socrata_data(user_auth, source_url, target_file):
+def get_socrata_data(user_auth, source_url):
     """
     If used in a larger project, use the format:
 
@@ -47,16 +50,14 @@ def get_socrata_data(user_auth, source_url, target_file):
         print "HTTP Request Failed!"
         exit()
 
-    # This will raise an exception if the response is not 200/ok or the json decoding otherwise fails.
-    # r.json() will return a list of dictionaries. So, in order to join them, we just join the lists.
-    # example: full_document.extend(r.json()) where full_document is initiated from the first list retrieved.
-    # print r.json()
+    return r.json()
 
-    with open(target_file, 'r+') as f:
-        for chunk in r.iter_content(1024):
-            f.write( chunk )
 
-    # return r.json()
+def write_to_file(json_ready_data, target_file, mode="a+"):
+
+
+    with open(target_file, mode) as f:
+        json.dump(json_ready_data, f)
 
 if __name__ == '__main__':
     """
@@ -71,5 +72,6 @@ if __name__ == '__main__':
     # use args.url, args.auth, and args.outfile
     args = parser.parse_args()
     
-    get_socrata_data(args.auth, args.url, args.outfile) 
+    retrieved_json = get_socrata_data(args.auth, args.url) 
 
+    write_to_file(retrieved_json, args.outfile)
