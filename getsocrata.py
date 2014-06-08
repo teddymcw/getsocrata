@@ -41,13 +41,27 @@ def get_socrata_data(user_auth, source_url, target_file):
     socrata_headers = { 'X-App-Token' : user_auth }
     
     r = requests.get(url=source_url, headers=socrata_headers)
-    
-    with open(target_file, 'w') as f:
+   
+    # Keep this here for the time being.
+    if str(r.status_code) != '200':
+        print "HTTP Request Failed!"
+        exit()
+
+    # This will raise an exception if the response is not 200/ok or the json decoding otherwise fails.
+    # r.json() will return a list of dictionaries. So, in order to join them, we just join the lists.
+    # example: full_document.extend(r.json()) where full_document is initiated from the first list retrieved.
+    # print r.json()
+
+    with open(target_file, 'r+') as f:
         for chunk in r.iter_content(1024):
             f.write( chunk )
 
+    # return r.json()
 
 if __name__ == '__main__':
+    """
+    Provide command line options for running this function outside of python.
+    """
 
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')

@@ -24,6 +24,5 @@ do
     offset=`expr $offset + $limit`
     echo $offset
 
-    sleep 2
 
 done # stop snagging data
