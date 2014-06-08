@@ -1,6 +1,8 @@
 #!/bin/bash
 
-url="https://data.sfgov.org/resource/g8m3-pdis.json"
+
+url="https://data.sfgov.org/resource/h4ui-ubbu.json" # SF Restaurant Scores
+#url="https://data.sfgov.org/resource/g8m3-pdis.json" # SF business registrations
 outfile="out.dat"
 pagesize="1000"
 

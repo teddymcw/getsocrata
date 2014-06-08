@@ -1,6 +1,7 @@
 *.auth
 build
 venv
+data
 *.pyc
 *.dat
 *.swp
