@@ -45,7 +45,7 @@ def get_socrata_data(user_auth, source_url):
     
     r = requests.get(url=source_url, headers=socrata_headers)
    
-    # Keep this here for the time being.
+    # Keep this here for now.
     if str(r.status_code) != '200':
         print "HTTP Request Failed!"
         exit()
@@ -68,10 +68,22 @@ if __name__ == '__main__':
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file')
     parser.add_argument('--auth', type=str, help='auth string')
+    parser.add_argument('--pagesize', type=int, help='# of records per request')
     
     # use args.url, args.auth, and args.outfile
     args = parser.parse_args()
     
-    retrieved_json = get_socrata_data(args.auth, args.url) 
+    complete_data_list = []
+    page_offset = 0
+    next_page = [ "placeholder - list will contain paginated dicts" ]
 
-    write_to_file(retrieved_json, args.outfile)
+    while next_page != []:
+
+        # build the next URL of pagesize records
+        next_url = args.url + "?$limit=" + str(args.pagesize) + "&$offset=" + str(page_offset)
+        print next_url
+        next_page = get_socrata_data(args.auth, next_url)
+        complete_data_list.extend(next_page)
+        page_offset += args.pagesize
+    
+    write_to_file(complete_data_list, args.outfile)
