@@ -70,12 +70,12 @@ if __name__ == '__main__':
     parser.add_argument('--auth', type=str, help='auth string')
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     
-    # use args.url, args.auth, and args.outfile
+    # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
     
     complete_data_list = []
     page_offset = 0
-    next_page = [ "placeholder - list will contain paginated dicts" ]
+    next_page = True # This will be used as a list in the while loop.
 
     while next_page != []:
 
