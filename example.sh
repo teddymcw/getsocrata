@@ -1,6 +1,6 @@
 #!/bin/bash
 
-config="simple.config"
+config="sample.config"
 
 # store authentication as a string in a .auth file
 # key.sh.auth should include the following:
