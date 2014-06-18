@@ -24,7 +24,7 @@ discontinue this request type in the future in favor of a callback URL method.
 import json
 import requests
 import argparse
-from ConfigParser import SafeConfigParser
+import ConfigParser #making exceptions available
 import sys
 
 
@@ -62,35 +62,37 @@ def write_to_file(json_ready_data, target_file, mode="a+"):
         json.dump(json_ready_data, f)
 
 def retrieve_config(config_filename="getsocrata.config"):
-    """Read and return url, output file, and pagesize from a configuration file.
+    """Read and return configuration values from a configuration file.
     
+    Call in code like this:
+    url, outfile, pagesize, auth = retrieve_config(<"optional_configname">)
     """
+    section = "getsocrata"
+    arg_keys = ["url", "outfile", "pagesize", "auth"]
+    arg_values = []
 
-    config = SafeConfigParser()
+    config = ConfigParser.SafeConfigParser()
     config.read(config_filename)
 
-    try:
-        url = config.get('getsocrata', 'url')
-    except NoSectionError:
-        return "no url specified in config file"
-    except:
-        print( "Unexpected Error:", sys.exc_info()[0])
+    def retrieve_config_args(section, arg_key):
 
-    try:
-        config.get('getsocrata', 'outfile')
+        arg_value = None
+        try:
+            arg_value = config.get(section, arg_key)
+        except ConfigParser.NoOptionError as err:
+            arg_value = None
+            print(err, "not specified in config file")
+        except:
+            print( "Unexpected Error:", sys.exc_info()[0])
 
+        return arg_value
 
     
-    print(config.get('getsocrata', 'pagesize'))
 
-    
+    for arg_key in arg_keys:
+        arg_values.append(retrieve_config_args(section, arg_key))
 
-
-    url = "hello"
-    outfile = "hello"
-    pagesize = "hello"
-
-    return (url, outfile, pagesize)
+    return tuple(arg_values)
 
 
 
@@ -99,15 +101,30 @@ if __name__ == '__main__':
     
     """
 
+    # Delete this comment and enable once value checking is implemented below
+    url, outfile, pagesize, auth = retrieve_config()
+
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file')
     parser.add_argument('--auth', type=str, help='auth string')
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     
+
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
     
+    if args.url != None:
+        url = args.url
+    if args.outfile != None:
+        outfile = args.outfile
+    if args.auth != None:
+        auth = args.auth
+    if args.pagesize != None:
+        pagesize = args.pagesize
+
+    pagesize = int(pagesize) #explicitly defines integer value
+
     complete_data_list = []
     page_offset = 0
     next_page = True # This will be used as a list in the while loop.
@@ -115,10 +132,10 @@ if __name__ == '__main__':
     while next_page != []:
 
         # build the next URL of pagesize records
-        next_url = args.url + "?$limit=" + str(args.pagesize) + "&$offset=" + str(page_offset)
+        next_url = url + "?$limit=" + str(pagesize) + "&$offset=" + str(page_offset)
         print next_url
-        next_page = get_socrata_data(args.auth, next_url)
+        next_page = get_socrata_data(auth, next_url)
         complete_data_list.extend(next_page)
-        page_offset += args.pagesize
+        page_offset += pagesize
     
-    write_to_file(complete_data_list, args.outfile)
+    write_to_file(complete_data_list, outfile)
