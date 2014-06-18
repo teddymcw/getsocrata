@@ -24,8 +24,9 @@ discontinue this request type in the future in favor of a callback URL method.
 import json
 import requests
 import argparse
-import ConfigParser #making exceptions available
+import ConfigParser  # Exceptions are used, import the whole thing!
 import sys
+import os
 
 
 def get_socrata_data(user_auth, source_url):
@@ -55,13 +56,14 @@ def get_socrata_data(user_auth, source_url):
     return r.json()
 
 
+# Potentially deprecated, was used in main()
 def write_to_file(json_ready_data, target_file, mode="a+"):
-
 
     with open(target_file, mode) as f:
         json.dump(json_ready_data, f)
 
-def retrieve_config(config_filename="getsocrata.config"):
+
+def retrieve_config(config_filename="simple.config"):
     """Read and return configuration values from a configuration file.
     
     Call in code like this:
@@ -101,19 +103,21 @@ if __name__ == '__main__':
     
     """
 
-    # Delete this comment and enable once value checking is implemented below
-    url, outfile, pagesize, auth = retrieve_config()
-
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file')
     parser.add_argument('--auth', type=str, help='auth string')
     parser.add_argument('--pagesize', type=int, help='# of records per request')
+    parser.add_argument('--config', type=str, help='specify a configuration file')
     
 
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
-    
+
+    # retrieve a configuration file if one is specified.
+    if args.config != None:
+        url, outfile, pagesize, auth = retrieve_config(args.config)
+
     if args.url != None:
         url = args.url
     if args.outfile != None:
@@ -131,11 +135,17 @@ if __name__ == '__main__':
 
     while next_page != []:
 
+        # consider replacing this with urlparse
         # build the next URL of pagesize records
         next_url = url + "?$limit=" + str(pagesize) + "&$offset=" + str(page_offset)
         print next_url
         next_page = get_socrata_data(auth, next_url)
-        complete_data_list.extend(next_page)
+        
+        with open(outfile, "a+") as f:
+            for each in next_page:
+                f.write(json.dumps(each) + os.linesep)
+        
         page_offset += pagesize
     
-    write_to_file(complete_data_list, outfile)
+    # superceded by the new approach of appending line separated json serializable objects
+    # write_to_file(complete_data_list, outfile)

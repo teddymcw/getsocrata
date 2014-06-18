@@ -1,23 +1,13 @@
 
+
+When used as main() the returned json pages are saved in append mode as they are retrieved.  They are saved as lines of json serializable objects.  To load the resulting file, do so line-by-line with json.loads().
+
 Current goal:
 
-Consider pickling each page and logging failures, then retrying failures. This will prevent a long job from aborting on account of one failed request.  When all the pickled files exist, build the final json and write it, then load it, rebuild it, and check it against itself.
+Track failed requests. Retry failed requests at the end. Timeout after a certain number of failed requests. This has the implicit assumption that the lines of json serialized objects are not ordered.
+
+Record more metadata from requests. Is any metadata available from Socrata?
+
+More logging.
 
 
-
-
-
-Old goals:
-
-Get record parts and merge them into a single large record.
-
-1. Each r.json() is stored as a list of dictionaries in python. We can use
-this formatting to our advantage by using list.extend(nextlist) to aggregate
-the complete dataset in one json file locally.
-
-2. The function currently written handles individual requests.  Another wrapping
-functionality needs to exist which reviews the current entry, extends the aggregate
-list, logs failures for retry, records any metadata available, and detects the end 
-of the list document successfully (in our case, detecting the end is easy because
-the wrapping list returns empty as the default sfgov socrata behavior (this is true
-at least for our test dataset).
