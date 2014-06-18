@@ -63,18 +63,18 @@ def write_to_file(json_ready_data, target_file, mode="a+"):
         json.dump(json_ready_data, f)
 
 
-def retrieve_config(config_filename="simple.config"):
+def retrieve_config(config_filename="simple.config", section="getsocrata"):
     """Read and return configuration values from a configuration file.
     
     Call in code like this:
     url, outfile, pagesize, auth = retrieve_config(<"optional_configname">)
     """
-    section = "getsocrata"
-    arg_keys = ["url", "outfile", "pagesize", "auth"]
-    arg_values = []
 
     config = ConfigParser.SafeConfigParser()
     config.read(config_filename)
+
+    arg_keys = config.options(section)
+    arg_values = []
 
     def retrieve_config_args(section, arg_key):
 
@@ -89,13 +89,11 @@ def retrieve_config(config_filename="simple.config"):
 
         return arg_value
 
-    
 
     for arg_key in arg_keys:
         arg_values.append(retrieve_config_args(section, arg_key))
 
-    return tuple(arg_values)
-
+    return dict(zip(arg_keys, arg_values))
 
 
 if __name__ == '__main__':
@@ -110,24 +108,30 @@ if __name__ == '__main__':
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
     
+    getsocrata_options = {} # our runtime options reside here
 
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
 
     # retrieve a configuration file if one is specified.
     if args.config != None:
-        url, outfile, pagesize, auth = retrieve_config(args.config)
+        config_dict = retrieve_config(args.config)
+        
+    expected_config_options = ['url', 'output_file', 'auth', 'pagesize' ]
+    
+    for expected_key in expected_config_options:
+        if expected_key in config_dict:
+            getsocrata_options[expected_key] = config_dict[expected_key]
 
+    # Explicitly define argparse options and override configuration file settings.
     if args.url != None:
-        url = args.url
+        getsocrata_options['url'] = args.url
     if args.outfile != None:
-        outfile = args.outfile
+        getsocrata_options['output_file'] = args.outfile
     if args.auth != None:
-        auth = args.auth
+        getsocrata_options['auth'] = args.auth
     if args.pagesize != None:
-        pagesize = args.pagesize
-
-    pagesize = int(pagesize) #explicitly defines integer value
+        getsocrata_options['pagesize'] = args.pagesize
 
     complete_data_list = []
     page_offset = 0
@@ -137,15 +141,15 @@ if __name__ == '__main__':
 
         # consider replacing this with urlparse
         # build the next URL of pagesize records
-        next_url = url + "?$limit=" + str(pagesize) + "&$offset=" + str(page_offset)
+        next_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(page_offset)
         print next_url
-        next_page = get_socrata_data(auth, next_url)
+        next_page = get_socrata_data(getsocrata_options['auth'], next_url)
         
-        with open(outfile, "a+") as f:
+        with open(getsocrata_options['output_file'], "a+") as f:
             for each in next_page:
                 f.write(json.dumps(each) + os.linesep)
         
-        page_offset += pagesize
+        page_offset += int(getsocrata_options['pagesize'])
     
     # superceded by the new approach of appending line separated json serializable objects
     # write_to_file(complete_data_list, outfile)
