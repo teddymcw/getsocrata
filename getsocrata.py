@@ -66,8 +66,6 @@ def write_to_file(json_ready_data, target_file, mode="a+"):
 def retrieve_config(config_filename="simple.config", section="getsocrata"):
     """Read and return configuration values from a configuration file.
     
-    Call in code like this:
-    url, outfile, pagesize, auth = retrieve_config(<"optional_configname">)
     """
 
     config = ConfigParser.SafeConfigParser()
@@ -76,24 +74,18 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     arg_keys = config.options(section)
     arg_values = []
 
-    def retrieve_config_args(section, arg_key):
+    config_dict = {}
 
-        arg_value = None
+    for arg_key in arg_keys:
         try:
-            arg_value = config.get(section, arg_key)
+            config_dict[arg_key] = config.get(section, arg_key)
         except ConfigParser.NoOptionError as err:
-            arg_value = None
+            config_dict[arg_key] = None
             print(err, "not specified in config file")
         except:
             print( "Unexpected Error:", sys.exc_info()[0])
 
-        return arg_value
-
-
-    for arg_key in arg_keys:
-        arg_values.append(retrieve_config_args(section, arg_key))
-
-    return dict(zip(arg_keys, arg_values))
+    return config_dict
 
 
 if __name__ == '__main__':
