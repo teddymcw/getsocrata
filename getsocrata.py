@@ -53,12 +53,10 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     config = ConfigParser.SafeConfigParser()
     config.read(config_filename)
 
-    arg_keys = config.options(section)
-    arg_values = []
-
     config_dict = {}
 
-    for arg_key in arg_keys:
+    # Iterate over a list of all the options provided in a section.
+    for arg_key in config.options(section):
         try:
             config_dict[arg_key] = config.get(section, arg_key)
         except ConfigParser.NoOptionError as err:
@@ -113,7 +111,7 @@ if __name__ == '__main__':
         raise error("No pagesize specified!")
 
     complete_data_list = []
-    page_offset = 0
+    page_offset = 0  # Start at the beginning, this could be an option.
     next_page = None   # Utilized in the while loop below
 
     while next_page != []:
