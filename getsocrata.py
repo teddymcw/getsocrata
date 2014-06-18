@@ -4,11 +4,6 @@ Run with the -h argument for help. All arguments must be included.
 
 This module may be run from the command line or may be imported into a larger project.
 
-If used in a larger project, use the format:
-
-    import getsocrata
-    getsocrata.get_socrata_data(user_app_key, source_url, target_output_filename)
-
 Retrieve and record a file from a socrata API.
 
 This specific setup has been tested on SFgov's Socrata API.
@@ -16,9 +11,6 @@ This specific setup has been tested on SFgov's Socrata API.
 This uses the deprecated authentication format with no callback URL. Socrata may 
 discontinue this request type in the future in favor of a callback URL method.
 
-    # r.json() will return a list of dictionaries. So, in order to join them, we just join the lists.
-    # example: full_document.extend(r.json()) where full_document is initiated from the first list retrieved.
-    # print r.json()
 """
 
 import json
@@ -32,9 +24,6 @@ import os
 def get_socrata_data(user_auth, source_url):
     """
     If used in a larger project, use the format:
-
-        import getsocrata
-        getsocrata.get_socrata_data(user_app_key, source_url, target_output_filename)
 
     Retrieve and record a file from a socrata API.
 
@@ -54,13 +43,6 @@ def get_socrata_data(user_auth, source_url):
         exit()
 
     return r.json()
-
-
-# Potentially deprecated, was used in main()
-def write_to_file(json_ready_data, target_file, mode="a+"):
-
-    with open(target_file, mode) as f:
-        json.dump(json_ready_data, f)
 
 
 def retrieve_config(config_filename="simple.config", section="getsocrata"):
@@ -100,20 +82,15 @@ if __name__ == '__main__':
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
     
-    getsocrata_options = {} # our runtime options reside here
-
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
 
-    # retrieve a configuration file if one is specified.
+    # Set runtime options here:
+    # retrieve dict of runtime options from a configuration file if one is specified.
     if args.config != None:
-        config_dict = retrieve_config(args.config)
-        
-    expected_config_options = ['url', 'output_file', 'auth', 'pagesize' ]
-    
-    for expected_key in expected_config_options:
-        if expected_key in config_dict:
-            getsocrata_options[expected_key] = config_dict[expected_key]
+        getsocrata_options = retrieve_config(args.config)
+    else:
+        getsocrata_options = {}
 
     # Explicitly define argparse options and override configuration file settings.
     if args.url != None:
@@ -125,9 +102,19 @@ if __name__ == '__main__':
     if args.pagesize != None:
         getsocrata_options['pagesize'] = args.pagesize
 
+    # Rudimentary error checking:
+    if getsocrata_options['url'] == None:
+        raise error("No URL specified!")
+    if getsocrata_options['output_file'] == None:
+        raise error("No output_file specified!")
+    if getsocrata_options['auth'] == None:
+        raise error("No auth key specified!")
+    if getsocrata_options['pagesize'] == None:
+        raise error("No pagesize specified!")
+
     complete_data_list = []
     page_offset = 0
-    next_page = True # This will be used as a list in the while loop.
+    next_page = None   # Utilized in the while loop below
 
     while next_page != []:
 
@@ -143,5 +130,4 @@ if __name__ == '__main__':
         
         page_offset += int(getsocrata_options['pagesize'])
     
-    # superceded by the new approach of appending line separated json serializable objects
-    # write_to_file(complete_data_list, outfile)
+
