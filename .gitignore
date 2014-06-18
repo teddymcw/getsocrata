@@ -6,3 +6,8 @@ data
 *.dat
 *.swp
 deprecated/*
+*.json
+.Python
+include
+lib
+bin

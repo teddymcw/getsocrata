@@ -24,6 +24,8 @@ discontinue this request type in the future in favor of a callback URL method.
 import json
 import requests
 import argparse
+from ConfigParser import SafeConfigParser
+import sys
 
 
 def get_socrata_data(user_auth, source_url):
@@ -59,9 +61,42 @@ def write_to_file(json_ready_data, target_file, mode="a+"):
     with open(target_file, mode) as f:
         json.dump(json_ready_data, f)
 
-if __name__ == '__main__':
+def retrieve_config(config_filename="getsocrata.config"):
+    """Read and return url, output file, and pagesize from a configuration file.
+    
     """
-    Provide command line options for running this function outside of python.
+
+    config = SafeConfigParser()
+    config.read(config_filename)
+
+    try:
+        url = config.get('getsocrata', 'url')
+    except NoSectionError:
+        return "no url specified in config file"
+    except:
+        print( "Unexpected Error:", sys.exc_info()[0])
+
+    try:
+        config.get('getsocrata', 'outfile')
+
+
+    
+    print(config.get('getsocrata', 'pagesize'))
+
+    
+
+
+    url = "hello"
+    outfile = "hello"
+    pagesize = "hello"
+
+    return (url, outfile, pagesize)
+
+
+
+if __name__ == '__main__':
+    """Provide command line options for running this function outside of python.
+    
     """
 
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
