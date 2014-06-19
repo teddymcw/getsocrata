@@ -19,8 +19,8 @@ import argparse
 import ConfigParser  # Exceptions are used, import the whole thing!
 import sys
 import os
+import datetime
 import traceback
-
 
 def get_socrata_data(user_auth, source_url):
     """
@@ -67,11 +67,19 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     return config_dict
 
 
+def generate_filename(filename_base='output'):
+
+    time_string = datetime.datetime.now().strftime("%m%d%Y.%H%M%S")
+    
+    return filename_base + "." + time_string + ".json"
+
+
 class MissingArgumentException(Exception):
     def __init__(self, value):
         self.value = value
     def __str__(self):
         return repr(self.value)
+
 
 
 if __name__ == '__main__':
@@ -85,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--auth', type=str, help='auth string')
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
+    parser.add_argument('--project', type=str, help='specify a configuration file')
     
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
@@ -99,22 +108,25 @@ if __name__ == '__main__':
     # Explicitly define argparse options and override configuration file settings.
     if args.url != None:
         getsocrata_options['url'] = args.url
-    if args.outfile != None:
-        getsocrata_options['output_file'] = args.outfile
     if args.auth != None:
         getsocrata_options['auth'] = args.auth
     if args.pagesize != None:
         getsocrata_options['pagesize'] = args.pagesize
+    if args.project != None:
+        getsocrata_options['project'] = args.project
+        getsocrata_options['output_file'] = generate_filename(args.project)
+    if args.outfile != None:
+        getsocrata_options['output_file'] = args.outfile
 
     # Rudimentary error checking:
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
-    if 'output_file' not in getsocrata_options:
-        raise MissingArgumentException("No output_file specified!")
     if 'auth' not in getsocrata_options:
         raise MissingArgumentException("No auth key specified!")
     if 'pagesize' not in getsocrata_options:
         raise MissingArgumentException("No pagesize specified!")
+    if 'output_file' not in getsocrata_options:
+        getsocrata_options['output_file'] = generate_filename()
 
     complete_data_list = []
     page_offset = 0  # Start at the beginning, this could be an option.
