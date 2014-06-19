@@ -93,7 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--auth', type=str, help='auth string')
     parser.add_argument('--pagesize', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
-    parser.add_argument('--project', type=str, help='specify a configuration file')
+    parser.add_argument('--project', type=str, help='specify a project name for output')
     
     # use args.url, args.auth, args.pagesize, and args.outfile
     args = parser.parse_args()
@@ -114,10 +114,9 @@ if __name__ == '__main__':
         getsocrata_options['pagesize'] = args.pagesize
     if args.project != None:
         getsocrata_options['project'] = args.project
-        getsocrata_options['output_file'] = generate_filename(args.project)
     if args.outfile != None:
         getsocrata_options['output_file'] = args.outfile
-
+    
     # Rudimentary error checking:
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
@@ -126,7 +125,10 @@ if __name__ == '__main__':
     if 'pagesize' not in getsocrata_options:
         raise MissingArgumentException("No pagesize specified!")
     if 'output_file' not in getsocrata_options:
-        getsocrata_options['output_file'] = generate_filename()
+        if 'project' in getsocrata_options: # use project to generate filename if it exists
+            getsocrata_options['output_file'] = generate_filename(getsocrata_options['project'])
+        else:
+            getsocrata_options['output_file'] = generate_filename()
 
     complete_data_list = []
     page_offset = 0  # Start at the beginning, this could be an option.
