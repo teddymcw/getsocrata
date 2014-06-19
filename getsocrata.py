@@ -36,21 +36,28 @@ def get_socrata_data(user_auth, source_url):
 
     socrata_headers = { 'X-App-Token' : user_auth }
     
-    r = requests.get(url=source_url, headers=socrata_headers)
-   
-    # Keep this here for now.
-    if str(r.status_code) != '200':
-        print "HTTP Request Failed!"
-        exit()
+    tries = 3 # try at least 3 times 
+    while tries > 0:
 
-    return r.json()
+        r = requests.get(url=source_url, headers=socrata_headers)
+
+        if str(r.status_code) == '200':
+            return r.json
+        else:
+            print "HTTP Request Failed! Retrying..."
+            tries -= 1
+            continue
+
+    else:
+        # this will eventually do error handling and attempt this page of records later
+        raise
+
 
 
 def retrieve_config(config_filename="simple.config", section="getsocrata"):
     """Read and return configuration values from a configuration file.
     
     """
-
     config = ConfigParser.SafeConfigParser()
     config.read(config_filename)
 
@@ -68,13 +75,17 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
 
 
 def generate_filename(filename_base='output'):
+    """ Use a timestamp and an optional project name to make a unique filename.
 
+    """
     time_string = datetime.datetime.now().strftime("%m%d%Y.%H%M%S")
-    
     return filename_base + "." + time_string + ".json"
 
 
 class MissingArgumentException(Exception):
+    """ Exception class for when a critical argument is not passed before it is needed. 
+
+    """
     def __init__(self, value):
         self.value = value
     def __str__(self):
@@ -106,6 +117,7 @@ if __name__ == '__main__':
         getsocrata_options = {}
 
     # Explicitly define argparse options and override configuration file settings.
+    # Don't change these if statements, the user should be able to pass an empty string.
     if args.url != None:
         getsocrata_options['url'] = args.url
     if args.auth != None:
