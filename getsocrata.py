@@ -19,6 +19,7 @@ import argparse
 import ConfigParser  # Exceptions are used, import the whole thing!
 import sys
 import os
+import traceback
 
 
 def get_socrata_data(user_auth, source_url):
@@ -59,13 +60,18 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     for arg_key in config.options(section):
         try:
             config_dict[arg_key] = config.get(section, arg_key)
-        except ConfigParser.NoOptionError as err:
-            config_dict[arg_key] = None
-            print(err, "not specified in config file")
         except:
-            print( "Unexpected Error:", sys.exc_info()[0])
+            print( "Unexpected Error:", sys.exc_info())
+            raise
 
     return config_dict
+
+
+class MissingArgumentException(Exception):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return repr(self.value)
 
 
 if __name__ == '__main__':
@@ -101,14 +107,14 @@ if __name__ == '__main__':
         getsocrata_options['pagesize'] = args.pagesize
 
     # Rudimentary error checking:
-    if getsocrata_options['url'] == None:
-        raise error("No URL specified!")
-    if getsocrata_options['output_file'] == None:
-        raise error("No output_file specified!")
-    if getsocrata_options['auth'] == None:
-        raise error("No auth key specified!")
-    if getsocrata_options['pagesize'] == None:
-        raise error("No pagesize specified!")
+    if 'url' not in getsocrata_options:
+        raise MissingArgumentException("No URL specified!")
+    if 'output_file' not in getsocrata_options:
+        raise MissingArgumentException("No output_file specified!")
+    if 'auth' not in getsocrata_options:
+        raise MissingArgumentException("No auth key specified!")
+    if 'pagesize' not in getsocrata_options:
+        raise MissingArgumentException("No pagesize specified!")
 
     complete_data_list = []
     page_offset = 0  # Start at the beginning, this could be an option.
