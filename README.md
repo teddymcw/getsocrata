@@ -4,7 +4,10 @@ When used as main() the returned json pages are saved in append mode as they are
 
 Current goal:
 ======
-Track failed requests. Retry failed requests at the end. Timeout after a certain number of failed requests. This has the implicit assumption that the lines of json serialized objects are not ordered.
+
+Before implementing any new functions to build URLs, export the URL building to its own function.  This functionality should stand on its own and potentially use urlparse.
+
+Implement a separate function to build URLs for a series of offsets and page lengths. The intent of this function will be to repeat failed requests, but it will be useful for pulling specific pages of a dataset if necessary.
 
 Record more metadata from requests. Is any metadata available from Socrata?
 
