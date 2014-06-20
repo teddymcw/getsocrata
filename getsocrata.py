@@ -39,8 +39,13 @@ def get_socrata_data(user_auth, source_url):
     
     tries = 3 # try at least 3 times 
     while tries > 0:
-
-        r = requests.get(url=source_url, headers=socrata_headers)
+        try:
+            r = requests.get(url=source_url, headers=socrata_headers)
+        except Exception as e:
+            print "Request error:", sys.exc_info()[0]
+            trues -= 1
+            print "HTTP Request Failed! Retrying", tries, "more times..."
+            continue
 
         http_request_history[source_url] = r.status_code
         if str(r.status_code) == '200':
@@ -67,7 +72,7 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     for arg_key in config.options(section):
         try:
             config_dict[arg_key] = config.get(section, arg_key)
-        except:
+        except: # This shouldn't happen, if it does refer to ConfigParser docs.
             print( "Unexpected Error:", sys.exc_info())
             raise
 
