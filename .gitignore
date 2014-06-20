@@ -11,3 +11,4 @@ deprecated/*
 include
 lib
 bin
+*.log

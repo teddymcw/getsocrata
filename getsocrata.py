@@ -22,11 +22,12 @@ import os
 import datetime
 import traceback
 
+
+http_request_history = {}
+
 def get_socrata_data(user_auth, source_url):
     """
-    If used in a larger project, use the format:
-
-    Retrieve and record a file from a socrata API.
+    Retrieve and turn a list of json objects (records) from a socrata API endpoint.
 
     This specific setup has been tested on SFgov's Socrata API.
 
@@ -41,17 +42,16 @@ def get_socrata_data(user_auth, source_url):
 
         r = requests.get(url=source_url, headers=socrata_headers)
 
+        http_request_history[source_url] = r.status_code
         if str(r.status_code) == '200':
-            return r.json
+            return r.json()
         else:
-            print "HTTP Request Failed! Retrying..."
             tries -= 1
+            print "HTTP Request Failed! Retrying", tries, "more times..."
             continue
 
     else:
-        # this will eventually do error handling and attempt this page of records later
-        raise
-
+        return None
 
 
 def retrieve_config(config_filename="simple.config", section="getsocrata"):
@@ -153,11 +153,19 @@ if __name__ == '__main__':
         next_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(page_offset)
         print next_url
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
-        
+        page_offset += int(getsocrata_options['pagesize']) # do this after building the URL
+        if next_page == None:
+            continue # skip if the request fails, use the http_request_history to repeat later
         with open(getsocrata_options['output_file'], "a+") as f:
             for each in next_page:
                 f.write(json.dumps(each) + os.linesep)
-        
-        page_offset += int(getsocrata_options['pagesize'])
+    
+    # Indication of failure to the user:
+    for k,v in http_request_history.iteritems():
+        if str(v) != "200":
+            print "Failed:", k, "Response:", v
+    # Log all requests for the user:
+    with open(getsocrata_options['output_file']+".log", "w+") as f:
+        json.dump(http_request_history, f)
     
 
