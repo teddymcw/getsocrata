@@ -121,6 +121,11 @@ if __name__ == '__main__':
     else:
         getsocrata_options = {}
 
+    # TAR 062214 - This area should be generalized using args.__dict__ and a loop.
+    # (This is the same effect as vars(args)). This will ensure that all argument 
+    # objects that are not None override all config options. (With the added effect 
+    # of removing the explicit arguments, generalizing the code)
+    #
     # Explicitly define argparse options and override configuration file settings.
     # Don't change these if statements, the user should be able to pass an empty string.
     if args.url != None:
