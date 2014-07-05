@@ -43,7 +43,7 @@ def get_socrata_data(user_auth, source_url):
             r = requests.get(url=source_url, headers=socrata_headers)
         except Exception as e:
             print "Request error:", sys.exc_info()[0]
-            trues -= 1
+            tries -= 1
             print "HTTP Request Failed! Retrying", tries, "more times..."
             continue
 
