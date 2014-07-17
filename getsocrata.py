@@ -96,6 +96,19 @@ class MissingArgumentException(Exception):
     def __str__(self):
         return repr(self.value)
 
+def build_url_and_query_string(getsocrata_options):
+    """Builds url string from user provided socrata SODA api parameters.
+
+    """
+
+    generated_url = ""
+
+
+    # consider replacing this with urlparse
+    # build the next URL of pagesize records
+    generated_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(getsocrata_options['page_offset'])
+    
+    return generated_url 
 
 
 if __name__ == '__main__':
@@ -152,18 +165,17 @@ if __name__ == '__main__':
         else:
             getsocrata_options['output_file'] = generate_filename()
 
-    complete_data_list = []
-    page_offset = 0  # Start at the beginning, this could be an option.
+    getsocrata_options['page_offset'] = 0  # Start at the beginning, this could be an option.
     next_page = None   # Utilized in the while loop below
 
     while next_page != []:
 
         # consider replacing this with urlparse
         # build the next URL of pagesize records
-        next_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(page_offset)
+        next_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(getsocrata_options['page_offset'])
         print next_url
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
-        page_offset += int(getsocrata_options['pagesize']) # do this after building the URL
+        getsocrata_options['page_offset'] += int(getsocrata_options['pagesize']) # do this after building the URL
         if next_page == None:
             continue # skip if the request fails, use the http_request_history to repeat later
         with open(getsocrata_options['output_file'], "a+") as f:
