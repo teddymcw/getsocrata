@@ -16,7 +16,7 @@ discontinue this request type in the future in favor of a callback URL method.
 import json
 import requests
 import argparse
-import ConfigParser  # Exceptions are used, import the whole thing!
+import ConfigParser  # Exceptions are used, import the whole thing! Open question, will the SafeConfigParser function have access to the ConfigParser exceptions if we use the import format 'from ConfigParser import SafeConfigParser' ????
 import sys
 import os
 import datetime
@@ -99,14 +99,20 @@ class MissingArgumentException(Exception):
 def build_url_and_query_string(getsocrata_options):
     """Builds url string from user provided socrata SODA api parameters.
 
+    Question: Can URL QueryStrings be ordered? Does the order matter? Does socrata need the order or respect the order?
     """
 
     generated_url = ""
+    generated_url += getsocrata_options['url'] + "?"
 
+    accepted_querystrings = ["$select", "$where", "$order", "$group", "$limit", "$offset"]
+    
+    # for loop that would take each accepted querystring key, and appends it in the generated url
 
-    # consider replacing this with urlparse
-    # build the next URL of pagesize records
-    generated_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(getsocrata_options['page_offset'])
+    for key in accepted_querystrings:
+        generated_url += "&" + str(key) + "=" + str(getsocrata_options.get(key, ""))
+
+    #generated_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['$limit']) + "&$select=" + str(getsocrata_options['select']) + "&$offset=" + str(getsocrata_options['page_offset'])
     
     return generated_url 
 
@@ -120,11 +126,11 @@ if __name__ == '__main__':
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file')
     parser.add_argument('--auth', type=str, help='auth string')
-    parser.add_argument('--pagesize', type=int, help='# of records per request')
+    parser.add_argument('--limit', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
     parser.add_argument('--project', type=str, help='specify a project name for output')
     
-    # use args.url, args.auth, args.pagesize, and args.outfile
+    # use args.url, args.auth, args.limit, and args.outfile
     args = parser.parse_args()
 
     # Set runtime options here:
@@ -145,8 +151,8 @@ if __name__ == '__main__':
         getsocrata_options['url'] = args.url
     if args.auth != None:
         getsocrata_options['auth'] = args.auth
-    if args.pagesize != None:
-        getsocrata_options['pagesize'] = args.pagesize
+    if args.limit != None:
+        getsocrata_options['$limit'] = args.limit
     if args.project != None:
         getsocrata_options['project'] = args.project
     if args.outfile != None:
@@ -157,25 +163,24 @@ if __name__ == '__main__':
         raise MissingArgumentException("No URL specified!")
     if 'auth' not in getsocrata_options:
         raise MissingArgumentException("No auth key specified!")
-    if 'pagesize' not in getsocrata_options:
-        raise MissingArgumentException("No pagesize specified!")
+    if '$limit' not in getsocrata_options:
+        raise MissingArgumentException("No limit specified!")
     if 'output_file' not in getsocrata_options:
         if 'project' in getsocrata_options: # use project to generate filename if it exists
             getsocrata_options['output_file'] = generate_filename(getsocrata_options['project'])
         else:
             getsocrata_options['output_file'] = generate_filename()
 
-    getsocrata_options['page_offset'] = 0  # Start at the beginning, this could be an option.
+    # needs fixed: user cannot currently specify offset - they are overridden here.
+    getsocrata_options['$offset'] = 0  # Start at the beginning, this could be an option.
     next_page = None   # Utilized in the while loop below
 
     while next_page != []:
 
-        # consider replacing this with urlparse
-        # build the next URL of pagesize records
-        next_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['pagesize']) + "&$offset=" + str(getsocrata_options['page_offset'])
+        next_url = build_url_and_query_string(getsocrata_options)
         print next_url
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
-        getsocrata_options['page_offset'] += int(getsocrata_options['pagesize']) # do this after building the URL
+        getsocrata_options['$offset'] += int(getsocrata_options['$limit']) # do this after building the URL
         if next_page == None:
             continue # skip if the request fails, use the http_request_history to repeat later
         with open(getsocrata_options['output_file'], "a+") as f:
