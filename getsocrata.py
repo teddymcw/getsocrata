@@ -64,27 +64,31 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
     
     """
     config = ConfigParser.SafeConfigParser()
-    config.read(config_filename)
+    try:
+        config.read(config_filename)
+    except: # Catch any unexpected configuration file issues and raise.
+        print "Unexpected Error: Configuration file error. Check name and format.", sys.exc_info()
+        raise
 
     config_dict = {}
 
     # Iterate over a list of all the options provided in a section.
-    for arg_key in config.options(section):
-        try:
+    try:
+        for arg_key in config.options(section):
             config_dict[arg_key] = config.get(section, arg_key)
-        except: # This shouldn't happen, if it does refer to ConfigParser docs.
-            print( "Unexpected Error:", sys.exc_info())
-            raise
+    except ConfigParser.NoSectionError:
+        print "Warning: No section '", section, "'"
+        return {}
 
     return config_dict
 
 
-def generate_filename(filename_base='output'):
+def generate_filename(filename_base='myproject'):
     """ Use a timestamp and an optional project name to make a unique filename.
 
     """
-    time_string = datetime.datetime.now().strftime("%m%d%Y.%H%M%S")
-    return filename_base + "." + time_string + ".json"
+
+    return filename_base + "." + datetime.datetime.now().strftime("%m%d%Y.%H%M%S") + ".json"
 
 
 class MissingArgumentException(Exception):
@@ -96,6 +100,7 @@ class MissingArgumentException(Exception):
     def __str__(self):
         return repr(self.value)
 
+
 def build_url_and_query_string(getsocrata_options):
     """Builds url string from user provided socrata SODA api parameters.
 
@@ -103,18 +108,18 @@ def build_url_and_query_string(getsocrata_options):
     """
 
     generated_url = ""
-    generated_url += getsocrata_options['url'] + "?"
-
     accepted_querystrings = ["$select", "$where", "$order", "$group", "$limit", "$offset"]
-    
-    # for loop that would take each accepted querystring key, and appends it in the generated url
 
+    #socrata filters
+    for key, value in getsocrata_options['filters'].iteritems():
+        generated_url += "&" + str(key) + "=" + str(value)
+
+    #socrata SoQL queries
+    generated_url += getsocrata_options['url'] + "?"
     for key in accepted_querystrings:
         generated_url += "&" + str(key) + "=" + str(getsocrata_options.get(key, ""))
-
-    #generated_url = getsocrata_options['url'] + "?$limit=" + str(getsocrata_options['$limit']) + "&$select=" + str(getsocrata_options['select']) + "&$offset=" + str(getsocrata_options['page_offset'])
     
-    return generated_url 
+    return generated_url
 
 
 if __name__ == '__main__':
@@ -122,22 +127,24 @@ if __name__ == '__main__':
     
     """
 
+    # The config file can specify any variable used in argparse, but argparse will override SafeConfigParser.
+    # However, the config file MUST be passed as an argument in __main__ or it will not be used.
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
-    parser.add_argument('--outfile', type=str, help='name of output file')
+    parser.add_argument('--outfile', type=str, help='name of output file') # generated from project+timestamp unless specified.
     parser.add_argument('--auth', type=str, help='auth string')
-    parser.add_argument('--limit', type=int, help='# of records per request')
     parser.add_argument('--config', type=str, help='specify a configuration file')
     parser.add_argument('--project', type=str, help='specify a project name for output')
     
-    # use args.url, args.auth, args.limit, and args.outfile
     args = parser.parse_args()
 
-    # Set runtime options here:
-    # retrieve dict of runtime options from a configuration file if one is specified.
+    # If a config file is specified, retrieve its arguements. Else, no configuration file is used (note that
+    # if you are running this library as main, a config file is NECESSARY.
     if args.config != None:
-        getsocrata_options = retrieve_config(args.config)
+        getsocrata_options = retrieve_config(args.config, 'getsocrata')
+        getsocrata_options['filters'] = retrieve_config(args.config, 'getsocrata filters')
     else:
+        print "Warning: Running this module as __main__ generally requires a configuration file."
         getsocrata_options = {}
 
     # TAR 062214 - This area should be generalized using args.__dict__ and a loop.
@@ -147,12 +154,13 @@ if __name__ == '__main__':
     #
     # Explicitly define argparse options and override configuration file settings.
     # Don't change these if statements, the user should be able to pass an empty string.
+    #
+    # This error checking should occur elsewhere so it is available to people calling the
+    # module as a library.
     if args.url != None:
         getsocrata_options['url'] = args.url
     if args.auth != None:
         getsocrata_options['auth'] = args.auth
-    if args.limit != None:
-        getsocrata_options['$limit'] = args.limit
     if args.project != None:
         getsocrata_options['project'] = args.project
     if args.outfile != None:
@@ -165,14 +173,14 @@ if __name__ == '__main__':
         raise MissingArgumentException("No auth key specified!")
     if '$limit' not in getsocrata_options:
         raise MissingArgumentException("No limit specified!")
+    if '$offset' not in getsocrata_options:
+        raise MissingArgumentException("No offset specified!")
     if 'output_file' not in getsocrata_options:
         if 'project' in getsocrata_options: # use project to generate filename if it exists
             getsocrata_options['output_file'] = generate_filename(getsocrata_options['project'])
         else:
-            getsocrata_options['output_file'] = generate_filename()
+            getsocrata_options['output_file'] = generate_filename() # use default value
 
-    # needs fixed: user cannot currently specify offset - they are overridden here.
-    getsocrata_options['$offset'] = 0  # Start at the beginning, this could be an option.
     next_page = None   # Utilized in the while loop below
 
     while next_page != []:
@@ -180,18 +188,26 @@ if __name__ == '__main__':
         next_url = build_url_and_query_string(getsocrata_options)
         print next_url
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
-        getsocrata_options['$offset'] += int(getsocrata_options['$limit']) # do this after building the URL
+
+        # increment the offset regardless of success. "move on"
+        getsocrata_options['$offset'] += int(getsocrata_options['$limit'])
+
+        # skip the write if the request fails, the http_request_history json log file can be used to retry.
         if next_page == None:
-            continue # skip if the request fails, use the http_request_history to repeat later
+            continue
+        
+        # write one json object per line (contains <$limit> records)
         with open(getsocrata_options['output_file'], "a+") as f:
             for each in next_page:
                 f.write(json.dumps(each) + os.linesep)
     
-    # Indication of failure to the user:
+    # This parses and prints any failed URLs for the user of this module as __main__:
+    # The status codes are currently logged to http_request_history in get_socrata_data()
     for k,v in http_request_history.iteritems():
         if str(v) != "200":
             print "Failed:", k, "Response:", v
-    # Log all requests for the user:
+
+    # Log http_requests_history as json:
     with open(getsocrata_options['output_file']+".log", "w+") as f:
         json.dump(http_request_history, f)
     
