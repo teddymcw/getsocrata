@@ -20,6 +20,7 @@ import ConfigParser  # Exceptions are used, import the whole thing! Open questio
 import sys
 import os
 import datetime
+import urllib
 import traceback
 
 
@@ -109,16 +110,19 @@ def build_url_and_query_string(getsocrata_options):
 
     generated_url = ""
     accepted_querystrings = ["$select", "$where", "$order", "$group", "$limit", "$offset"]
+    
+    #append base URL
+    generated_url += getsocrata_options['url'] + "?"
 
-    #socrata filters
-    for key, value in getsocrata_options['filters'].iteritems():
-        generated_url += "&" + str(key) + "=" + str(value)
+    #socrata filters - use urllib's urlencode to ensure spaces and other special characters are encoded.
+    generated_url += urllib.urlencode(getsocrata_options['filters']).replace('+','%20')
 
     #socrata SoQL queries
-    generated_url += getsocrata_options['url'] + "?"
-    for key in accepted_querystrings:
-        generated_url += "&" + str(key) + "=" + str(getsocrata_options.get(key, ""))
-    
+    for key, value in getsocrata_options.iteritems():
+        if key in accepted_querystrings:
+            generated_url += "&"+urllib.urlencode([(key, value)]).replace('+','%20')
+            print generated_url
+
     return generated_url
 
 
@@ -167,6 +171,7 @@ if __name__ == '__main__':
         getsocrata_options['output_file'] = args.outfile
     
     # Rudimentary error checking:
+    # We can also set defaults here. SoQL has some defaults which should be respected if unspecified by the user.
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
     if 'auth' not in getsocrata_options:
@@ -190,7 +195,7 @@ if __name__ == '__main__':
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
 
         # increment the offset regardless of success. "move on"
-        getsocrata_options['$offset'] += int(getsocrata_options['$limit'])
+        getsocrata_options['$offset'] = int(getsocrata_options['$offset']) + int(getsocrata_options['$limit'])
 
         # skip the write if the request fails, the http_request_history json log file can be used to retry.
         if next_page == None:
