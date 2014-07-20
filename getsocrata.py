@@ -111,17 +111,17 @@ def build_url_and_query_string(getsocrata_options):
     generated_url = ""
     accepted_querystrings = ["$select", "$where", "$order", "$group", "$limit", "$offset"]
     
-    #append base URL
+    #append base URL and begin querystring
     generated_url += getsocrata_options['url'] + "?"
 
     #socrata filters - use urllib's urlencode to ensure spaces and other special characters are encoded.
-    generated_url += urllib.urlencode(getsocrata_options['filters']).replace('+','%20')
+    generated_url += urllib.urlencode(getsocrata_options['filters'])#.replace('+','%20')
 
     #socrata SoQL queries
     for key, value in getsocrata_options.iteritems():
         if key in accepted_querystrings:
+            #generated_url += "&"+str(key)+"="+str(value)
             generated_url += "&"+urllib.urlencode([(key, value)]).replace('+','%20')
-            print generated_url
 
     return generated_url
 
@@ -142,8 +142,9 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    # If a config file is specified, retrieve its arguements. Else, no configuration file is used (note that
+    # If a config file is specified, retrieve its arguments. Else, no configuration file is used (note that
     # if you are running this library as main, a config file is NECESSARY.
+    # Also retrieve filters for the control.
     if args.config != None:
         getsocrata_options = retrieve_config(args.config, 'getsocrata')
         getsocrata_options['filters'] = retrieve_config(args.config, 'getsocrata filters')
@@ -176,20 +177,22 @@ if __name__ == '__main__':
         raise MissingArgumentException("No URL specified!")
     if 'auth' not in getsocrata_options:
         raise MissingArgumentException("No auth key specified!")
-    if '$limit' not in getsocrata_options:
-        raise MissingArgumentException("No limit specified!")
+    
+    # Two defaults in socrata, we must define them to allow __main__ to auto-increment by default.
     if '$offset' not in getsocrata_options:
-        raise MissingArgumentException("No offset specified!")
+        getsocrata_options['$offset'] = 0
+    if '$limit' not in getsocrata_options:
+        getsocrata_options['$limit'] = 1000
+
+    # use project to generate json output filename if one is not specified. Else use a default.
     if 'output_file' not in getsocrata_options:
-        if 'project' in getsocrata_options: # use project to generate filename if it exists
+        if 'project' in getsocrata_options:
             getsocrata_options['output_file'] = generate_filename(getsocrata_options['project'])
         else:
             getsocrata_options['output_file'] = generate_filename() # use default value
 
     next_page = None   # Utilized in the while loop below
-
     while next_page != []:
-
         next_url = build_url_and_query_string(getsocrata_options)
         print next_url
         next_page = get_socrata_data(getsocrata_options['auth'], next_url)
