@@ -5,7 +5,7 @@ When used as main() the returned json pages are saved in append mode as they are
 Current goal:
 ======
 
-
+Extract the configuration file parameters from __main__ so that people can use SafeConfigParser config files in their own applications.
 
 Record more metadata from requests. Is any metadata available from Socrata?
 
