@@ -52,6 +52,9 @@ def get_socrata_data(user_auth, source_url, output_file):
 
         http_request_history[source_url] = r.status_code
         if str(r.status_code) == '200':
+            # Write successful attempt to log.
+            with open(output_file+".log", "a+") as f:
+                f.write(json.dumps({'time of request': datetime.datetime.now().strftime("%m.%d.%Y,%H:%M:%S"), str(source_url) : str(r.status_code)}) + os.linesep)
             return r.json()
         else:
             tries -= 1
