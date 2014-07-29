@@ -25,8 +25,10 @@ import traceback
 
 
 http_request_history = {}
+getsocrata_options = {}
 
-def get_socrata_data(user_auth, source_url):
+
+def get_socrata_data(user_auth, source_url, output_file):
     """
     Retrieve and turn a list of json objects (records) from a socrata API endpoint.
 
@@ -39,13 +41,13 @@ def get_socrata_data(user_auth, source_url):
     socrata_headers = { 'X-App-Token' : user_auth }
     
     tries = 3 # try at least 3 times 
+    r = None  # Need r in this scope for while/else statement
     while tries > 0:
         try:
             r = requests.get(url=source_url, headers=socrata_headers)
         except Exception as e:
-            print "Request error:", sys.exc_info()[0]
             tries -= 1
-            print "HTTP Request Failed! Retrying", tries, "more times..."
+            print "Request error:", sys.exc_info()[0], "trying", tries, "more times."
             continue
 
         http_request_history[source_url] = r.status_code
@@ -55,9 +57,20 @@ def get_socrata_data(user_auth, source_url):
             tries -= 1
             print "HTTP Request Failed! Retrying", tries, "more times..."
             continue
-
+    # In the event that we have a failure, record it into a log file so it can be tracked and continue on.
     else:
-        return None
+        # Some errors do not ever assign a status code, so we'll assign one if r remains 'None'
+        if r == None:
+            status_code = 0
+        else:
+            status_code = r.status_code
+
+        print "Failed:", str(source_url), "Response:", str(status_code)
+        with open(output_file+".log", "a+") as f:
+            f.write(json.dumps({'time of request': datetime.datetime.now().strftime("%m.%d.%Y,%H:%M:%S"), str(source_url) : str(status_code)}) + os.linesep)
+
+        # if we returned [] then we couldn't tell the difference between a failed response and the end of the data stream.
+        return None 
 
 
 def parse_config_file(config_filename):
@@ -143,6 +156,34 @@ def build_url_and_query_string(getsocrata_options):
     return generated_url
 
 
+def increment_offset_and_record_data_until_empty():
+    """ This control loop iteratively pulls data until it runs out
+    
+    """
+
+    next_page = None   # Utilized in the while loop below
+    while next_page != []:
+
+        next_url = build_url_and_query_string(getsocrata_options)
+        print next_url
+
+        next_page = get_socrata_data(getsocrata_options['auth'], next_url, getsocrata_options['output_file'])
+
+        # increment the offset regardless of success. "move on"
+        getsocrata_options['$offset'] = int(getsocrata_options['$offset']) + int(getsocrata_options['$limit'])
+
+        # skip the write if the request fails, the http_request_history json log file can be used to retry.
+        if next_page == None:
+            continue
+        
+        # write one json object per line (contains <$limit> records)
+        with open(getsocrata_options['output_file'], "a+") as f:
+            for each in next_page:
+                f.write(json.dumps(each) + os.linesep)
+
+
+
+
 if __name__ == '__main__':
     """Provide command line options for running this function outside of python.
     
@@ -159,12 +200,12 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    # Warning: you really should specify an args.config in main.
+    # Warning: you really should specify an args.config if you are using the "if name == '__main__'" code block.
     if args.config != None:
         getsocrata_options = parse_config_file(args.config)
     else:
         print "Warning: Running this module as __main__ generally requires a configuration file."
-        getsocrata_options = {}
+        pass
 
     # TAR 062214 - This area should be generalized using args.__dict__ and a loop.
     # (This is the same effect as vars(args)). This will ensure that all argument 
@@ -173,9 +214,6 @@ if __name__ == '__main__':
     #
     # Explicitly define argparse options and override configuration file settings.
     # Don't change these if statements, the user should be able to pass an empty string.
-    #
-    # This error checking should occur elsewhere so it is available to people calling the
-    # module as a library.
     if args.url != None:
         getsocrata_options['url'] = args.url
     if args.auth != None:
@@ -185,7 +223,10 @@ if __name__ == '__main__':
     if args.outfile != None:
         getsocrata_options['output_file'] = args.outfile
     
+
     # Rudimentary error checking:
+    # Consider putting this in a function:
+
     # We can also set defaults here. SoQL has some defaults which should be respected if unspecified by the user.
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
@@ -205,32 +246,8 @@ if __name__ == '__main__':
         else:
             getsocrata_options['output_file'] = generate_filename() # use default value
 
-    next_page = None   # Utilized in the while loop below
-    while next_page != []:
-        next_url = build_url_and_query_string(getsocrata_options)
-        print next_url
-        next_page = get_socrata_data(getsocrata_options['auth'], next_url)
 
-        # increment the offset regardless of success. "move on"
-        getsocrata_options['$offset'] = int(getsocrata_options['$offset']) + int(getsocrata_options['$limit'])
-
-        # skip the write if the request fails, the http_request_history json log file can be used to retry.
-        if next_page == None:
-            continue
-        
-        # write one json object per line (contains <$limit> records)
-        with open(getsocrata_options['output_file'], "a+") as f:
-            for each in next_page:
-                f.write(json.dumps(each) + os.linesep)
-    
-    # This parses and prints any failed URLs for the user of this module as __main__:
-    # The status codes are currently logged to http_request_history in get_socrata_data()
-    for k,v in http_request_history.iteritems():
-        if str(v) != "200":
-            print "Failed:", k, "Response:", v
-
-    # Log http_requests_history as json:
-    with open(getsocrata_options['output_file']+".log", "w+") as f:
-        json.dump(http_request_history, f)
+    # Control logic for __main__:
+    increment_offset_and_record_data_until_empty()
     
 
