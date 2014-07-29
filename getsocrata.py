@@ -126,6 +126,21 @@ def build_url_and_query_string(getsocrata_options):
     return generated_url
 
 
+def parse_config_file(config_filename):
+    """ Load a configuration file into the configuration dict and return it.
+
+    """
+
+    # placeholder - we need to check to make sure the file actually exists!
+
+    getsocrata_options = {}
+
+    getsocrata_options = retrieve_config(config_filename, 'getsocrata')
+    getsocrata_options['filters'] = retrieve_config(config_filename, 'getsocrata filters')
+
+    return getsocrata_options
+
+
 if __name__ == '__main__':
     """Provide command line options for running this function outside of python.
     
@@ -142,12 +157,9 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
-    # If a config file is specified, retrieve its arguments. Else, no configuration file is used (note that
-    # if you are running this library as main, a config file is NECESSARY.
-    # Also retrieve filters for the control.
+    # Warning: you really should specify an args.config in main.
     if args.config != None:
-        getsocrata_options = retrieve_config(args.config, 'getsocrata')
-        getsocrata_options['filters'] = retrieve_config(args.config, 'getsocrata filters')
+        getsocrata_options = parse_config_file(args.config)
     else:
         print "Warning: Running this module as __main__ generally requires a configuration file."
         getsocrata_options = {}
