@@ -60,9 +60,26 @@ def get_socrata_data(user_auth, source_url):
         return None
 
 
+def parse_config_file(config_filename):
+    """ Load a configuration file into the configuration dict and return it.
+
+    This is really just a controller function for using the generic retrieve_config() function.
+    """
+
+    # placeholder - we need to check to make sure the file actually exists before trying to use it!
+
+    getsocrata_options = {}
+
+    getsocrata_options = retrieve_config(config_filename, 'getsocrata')
+    getsocrata_options['filters'] = retrieve_config(config_filename, 'getsocrata filters')
+
+    return getsocrata_options
+
+
 def retrieve_config(config_filename="simple.config", section="getsocrata"):
     """Read and return configuration values from a configuration file.
     
+    This is a generic function for moving key-value pairs from a ConfigParser config file into a dictionary.
     """
     config = ConfigParser.SafeConfigParser()
     try:
@@ -78,7 +95,7 @@ def retrieve_config(config_filename="simple.config", section="getsocrata"):
         for arg_key in config.options(section):
             config_dict[arg_key] = config.get(section, arg_key)
     except ConfigParser.NoSectionError:
-        print "Warning: No section '", section, "'"
+        print "Warning: No config section '" + str(section) + "' Returning an empty dictionary for this section."
         return {}
 
     return config_dict
@@ -124,21 +141,6 @@ def build_url_and_query_string(getsocrata_options):
             generated_url += "&"+urllib.urlencode([(key, value)]).replace('+','%20')
 
     return generated_url
-
-
-def parse_config_file(config_filename):
-    """ Load a configuration file into the configuration dict and return it.
-
-    """
-
-    # placeholder - we need to check to make sure the file actually exists!
-
-    getsocrata_options = {}
-
-    getsocrata_options = retrieve_config(config_filename, 'getsocrata')
-    getsocrata_options['filters'] = retrieve_config(config_filename, 'getsocrata filters')
-
-    return getsocrata_options
 
 
 if __name__ == '__main__':
