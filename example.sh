@@ -12,3 +12,6 @@ auth="<public key>"
 source key.sh.auth
 python getsocrata.py --auth $auth --config $config
 
+# unset env variables
+unset auth
+unset config
