@@ -1,14 +1,12 @@
 
-
+getsocrata
+------
 When used as main() the returned json pages are saved in append mode as they are retrieved.  They are saved as lines of json serializable objects.  To load the resulting file, do so line-by-line with json.loads().
 
-Current goal:
-======
-
-More logging.
 
 
-Help on module getsocrata:
+
+Python help built-in function on module getsocrata:
 
 NAME
     getsocrata - Run with the -h argument for help.
