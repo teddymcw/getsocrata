@@ -2,15 +2,15 @@
 
 config="sample.config"
 
-# store authentication as a string in a .auth file
-# key.sh.auth should include the following:
+# store app token as a string in a .auth file
+# token.sh.auth should include the following:
 : '
 #!/bin/bash
-auth="<public key>"
+token="<app token>"
 '
 
-source key.sh.auth
-python getsocrata.py --auth $auth --config $config
+source token.sh.auth
+python getsocrata.py --token $token --config $config
 
 # unset env variables
 unset auth

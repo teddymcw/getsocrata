@@ -3,19 +3,20 @@ getsocrata
 ------
 When used as main() the returned json pages are saved in append mode as they are retrieved.  They are saved as lines of json serializable objects.  To load the resulting file, do so line-by-line with json.loads().
 
+Python 3 support is expected in the future but not begun.
 
 Getting Started:
 ------
 
-getsocrata currently only supports Python 2.  Python 3 support is expected in the future but not begun.
+getsocrata currently only supports Python 2 in a linux environment.  
+
 
 1. Get the socrata json endpoint for your data. This is a URL (ex - http://data.sfgov.org/resource/7h4w-reyq.json)
-2. Register with Socrata at https://opendata.socrata.com/login and get an app token. You'll use this to access your private rate limit.
-Create an account -> login to your account -> Edit account settings -> App Tokens -> Create new application -> Copy your App token
-3. Create a file called 'key.sh.auth' and copy its contents from the comment in example.sh. Add your key as "<public key>"
-3. Modify sample.config to contain your  url(endpoint), and any filters or SoQL Queries (see the Socrata SODA API documentation).
-4. Use requirements.txt to build an appropriate virtual environment: pip install -r requirements.txt
-5. Run example.sh from bash.
+2. Register with Socrata at https://opendata.socrata.com/login and get an app token. You'll use this to access your private rate limit. Basic steps: Create an account -> login to your account -> Edit account settings -> App Tokens -> Create new application -> Copy your App token
+3. Move 'key.sh.auth.template' to 'key.sh.auth'. Add your app token as "<app token>".
+4. Modify sample.config to contain your  url(endpoint), and any filters or SoQL Queries (see the Socrata SODA API documentation).
+5. Use requirements.txt to build an appropriate virtual environment: pip install -r requirements.txt
+6. Run ./example.sh from bash.
 
 
 Python help() Output:

@@ -27,7 +27,7 @@ http_request_history = {}
 getsocrata_options = {}
 
 
-def get_socrata_data(user_auth, source_url, output_file):
+def get_socrata_data(token, source_url, output_file):
     """ Retrieve and turn a list of json objects (records) from a socrata API endpoint.
 
     This specific setup has been tested on SFgov's Socrata API.
@@ -36,7 +36,7 @@ def get_socrata_data(user_auth, source_url, output_file):
     discontinue this request type in the future in favor of a callback URL method.
     """
 
-    socrata_headers = { 'X-App-Token' : user_auth }
+    socrata_headers = { 'X-App-Token' : token }
     
     tries = 3 # try at least 3 times 
     r = None  # Need r in this scope for while/else statement
@@ -168,7 +168,7 @@ def increment_offset_and_record_data_until_empty():
         next_url = build_url_and_query_string(getsocrata_options)
         print next_url
 
-        next_page = get_socrata_data(getsocrata_options['auth'], next_url, getsocrata_options['output_file'])
+        next_page = get_socrata_data(getsocrata_options['token'], next_url, getsocrata_options['output_file'])
 
         # increment the offset regardless of success. "move on"
         getsocrata_options['$offset'] = int(getsocrata_options['$offset']) + int(getsocrata_options['$limit'])
@@ -192,13 +192,13 @@ if __name__ == '__main__':
     any variable used in argparse, but argparse will override SafeConfigParser. However, 
     the config file MUST be passed as an argument in __main__ or it will not be used.
 
-    REQUIRED COMMAND LINE OPTIONS to run this library from the command line: url, auth, config
+    REQUIRED COMMAND LINE OPTIONS to run this library from the command line: url, token, config
     """
 
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file') # generated from project+timestamp unless specified.
-    parser.add_argument('--auth', type=str, help='auth string')
+    parser.add_argument('--token', type=str, help='app token')
     parser.add_argument('--config', type=str, help='specify a configuration file')
     parser.add_argument('--project', type=str, help='specify a project name for output')
     
@@ -223,8 +223,8 @@ if __name__ == '__main__':
     # Don't change these if statements, the user should be able to pass an empty string.
     if args.url != None:
         getsocrata_options['url'] = args.url
-    if args.auth != None:
-        getsocrata_options['auth'] = args.auth
+    if args.token != None:
+        getsocrata_options['token'] = args.token
     if args.project != None:
         getsocrata_options['project'] = args.project
     if args.outfile != None:
@@ -233,8 +233,8 @@ if __name__ == '__main__':
     # Make sure the required options exist.
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
-    if 'auth' not in getsocrata_options:
-        raise MissingArgumentException("No auth key specified!")
+    if 'token' not in getsocrata_options:
+        raise MissingArgumentException("No app token specified!")
     
     # SoQL has some defaults which should be respected if unspecified by the user.
     # Two defaults in socrata, these must be defined to allow __main__ to auto-increment by default.
