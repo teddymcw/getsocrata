@@ -1,13 +1,10 @@
 """
 
-Run with the -h argument for help. All arguments must be included.
+Run with the -h argument for help.
 
 This module may be run from the command line or may be imported into a larger project.
 
-Retrieve and record a file from a socrata API.
-
-This specific setup has been tested on SFgov's Socrata API.
-
+The module uses Socrata Open Data Api (SODA) Version 1
 This uses the deprecated authentication format with no callback URL. Socrata may 
 discontinue this request type in the future in favor of a callback URL method.
 
@@ -29,8 +26,7 @@ getsocrata_options = {}
 
 
 def get_socrata_data(user_auth, source_url, output_file):
-    """
-    Retrieve and turn a list of json objects (records) from a socrata API endpoint.
+    """ Retrieve and turn a list of json objects (records) from a socrata API endpoint.
 
     This specific setup has been tested on SFgov's Socrata API.
 
@@ -188,12 +184,15 @@ def increment_offset_and_record_data_until_empty():
 
 
 if __name__ == '__main__':
-    """Provide command line options for running this function outside of python.
+    """Provide command line options for running this library from the command line.
     
+    This module uses a config file parsed by SafeConfigParser. The config file can specify 
+    any variable used in argparse, but argparse will override SafeConfigParser. However, 
+    the config file MUST be passed as an argument in __main__ or it will not be used.
+
+    REQUIRED COMMAND LINE OPTIONS to run this library from the command line: url, auth, config
     """
 
-    # The config file can specify any variable used in argparse, but argparse will override SafeConfigParser.
-    # However, the config file MUST be passed as an argument in __main__ or it will not be used.
     parser = argparse.ArgumentParser(description='Assign a target URL and an output project or filename.')
     parser.add_argument('--url', type=str, help='source URL')
     parser.add_argument('--outfile', type=str, help='name of output file') # generated from project+timestamp unless specified.
@@ -203,12 +202,15 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
 
+
+    # Load getsocrata_options from a configration file.
     # Warning: you really should specify an args.config if you are using the "if name == '__main__'" code block.
     if args.config != None:
         getsocrata_options = parse_config_file(args.config)
     else:
         print "Warning: Running this module as __main__ generally requires a configuration file."
         pass
+
 
     # TAR 062214 - This area should be generalized using args.__dict__ and a loop.
     # (This is the same effect as vars(args)). This will ensure that all argument 
@@ -226,23 +228,21 @@ if __name__ == '__main__':
     if args.outfile != None:
         getsocrata_options['output_file'] = args.outfile
     
-
-    # Rudimentary error checking:
-    # Consider putting this in a function:
-
-    # We can also set defaults here. SoQL has some defaults which should be respected if unspecified by the user.
+    # Make sure the required options exist.
     if 'url' not in getsocrata_options:
         raise MissingArgumentException("No URL specified!")
     if 'auth' not in getsocrata_options:
         raise MissingArgumentException("No auth key specified!")
     
-    # Two defaults in socrata, we must define them to allow __main__ to auto-increment by default.
+    # SoQL has some defaults which should be respected if unspecified by the user.
+    # Two defaults in socrata, these must be defined to allow __main__ to auto-increment by default.
     if '$offset' not in getsocrata_options:
         getsocrata_options['$offset'] = 0
     if '$limit' not in getsocrata_options:
         getsocrata_options['$limit'] = 1000
 
-    # use project to generate json output filename if one is not specified. Else use a default.
+    # It is preferred not to specify an output file but the functionality is provided.
+    # All file writes are appends, so you can do this to merge multiple queries in one file.
     if 'output_file' not in getsocrata_options:
         if 'project' in getsocrata_options:
             getsocrata_options['output_file'] = generate_filename(getsocrata_options['project'])

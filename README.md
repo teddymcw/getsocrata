@@ -5,25 +5,126 @@ When used as main() the returned json pages are saved in append mode as they are
 Current goal:
 ======
 
-Extract the configuration file parameters from __main__ so that people can use SafeConfigParser config files in their own applications.
-
-Record more metadata from requests. Is any metadata available from Socrata?
-
 More logging.
 
 
-Completed goals:
-======
-Implement a separate function to build URLs.  This function builds a complete SODA2 SoQL query/filter URL using urllib.urlencode. The socrata SODA SoQL query documentation specifies that urlencode with % notation is optimal: http://dev.socrata.com/docs/queries.html
+Help on module getsocrata:
+
+NAME
+    getsocrata - Run with the -h argument for help.
+
+FILE
+    /home/robbintt/monolith/getsocrata/getsocrata.py
+
+DESCRIPTION
+    This module may be run from the command line or may be imported into a larger project.
+    
+    The module uses Socrata Open Data Api (SODA) Version 1
+    This uses the deprecated authentication format with no callback URL. Socrata may 
+    discontinue this request type in the future in favor of a callback URL method.
+
+CLASSES
+    exceptions.Exception(exceptions.BaseException)
+        MissingArgumentException
+    
+    class MissingArgumentException(exceptions.Exception)
+     |  Exception class for when a critical argument is not passed before it is needed.
+     |  
+     |  Method resolution order:
+     |      MissingArgumentException
+     |      exceptions.Exception
+     |      exceptions.BaseException
+     |      __builtin__.object
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, value)
+     |  
+     |  __str__(self)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from exceptions.Exception:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __getitem__(...)
+     |      x.__getitem__(y) <==> x[y]
+     |  
+     |  __getslice__(...)
+     |      x.__getslice__(i, j) <==> x[i:j]
+     |      
+     |      Use of negative indices is not supported.
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __unicode__(...)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.BaseException:
+     |  
+     |  __dict__
+     |  
+     |  args
+     |  
+     |  message
+
+FUNCTIONS
+    build_url_and_query_string(getsocrata_options)
+        Builds url string from user provided socrata SODA api parameters.
+        
+        Question: Can URL QueryStrings be ordered? Does the order matter? Does socrata need the order or respect the order?
+    
+    generate_filename(filename_base='myproject')
+        Use a timestamp and an optional project name to make a unique filename.
+    
+    get_socrata_data(user_auth, source_url, output_file)
+        Retrieve and turn a list of json objects (records) from a socrata API endpoint.
+        
+        This specific setup has been tested on SFgov's Socrata API.
+        
+        This uses the deprecated authentication format with no callback URL. Socrata may 
+        discontinue this request type in the future in favor of a callback URL method.
+    
+    increment_offset_and_record_data_until_empty()
+        This control loop iteratively pulls data until it runs out
+    
+    parse_config_file(config_filename)
+        Load a configuration file into the configuration dict and return it.
+        
+        This is really just a controller function for using the generic retrieve_config() function.
+    
+    retrieve_config(config_filename='simple.config', section='getsocrata')
+        Read and return configuration values from a configuration file.
+        
+        This is a generic function for moving key-value pairs from a ConfigParser config file into a dictionary.
+
+DATA
+    getsocrata_options = {}
+    http_request_history = {}
 
 
-Socrata's explanation of throttling:
-=======
-Throttling and Applications Tokens - http://dev.socrata.com/consumers/getting-started.html     
-
-Hold on a second! Before you go storming off to make the next great open data app, you should understand how SODA handles throttling. You can make a certain certain number of requests without an application token, but they come from a shared pool and you.re eventually going to get cut off.    
-
-If you want more requests, register for an application token and your application will be granted up to 1000 requests per rolling hour period. If you need even more than that, special exceptions are made by request. Use the Help! tab on the right of this page to file a trouble ticket.    
-
-Filtering data via a SODA API is fairly straightforward. There are two primary mechanisms you can use to filter data: Simple Filters and SoQL Queries    
-
+None
