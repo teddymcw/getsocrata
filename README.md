@@ -7,6 +7,8 @@ When used as main() the returned json pages are saved in append mode as they are
 Getting Started:
 ------
 
+getsocrata currently only supports Python 2.  Python 3 support is expected in the future but not begun.
+
 1. Get the socrata json endpoint for your data. This is a URL (ex - http://data.sfgov.org/resource/7h4w-reyq.json)
 2. Register with Socrata at https://opendata.socrata.com/login and get an app token. You'll use this to access your private rate limit.
 Create an account -> login to your account -> Edit account settings -> App Tokens -> Create new application -> Copy your App token
