@@ -10,5 +10,5 @@ auth="<public key>"
 '
 
 source key.sh.auth
-
 python getsocrata.py --auth $auth --config $config
+

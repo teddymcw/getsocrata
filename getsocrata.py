@@ -8,6 +8,8 @@ The module uses Socrata Open Data Api (SODA) Version 1
 This uses the deprecated authentication format with no callback URL. Socrata may 
 discontinue this request type in the future in favor of a callback URL method.
 
+
+
 """
 
 import json
@@ -144,7 +146,7 @@ def build_url_and_query_string(getsocrata_options):
     generated_url += getsocrata_options['url'] + "?"
 
     #socrata filters - use urllib's urlencode to ensure spaces and other special characters are encoded.
-    generated_url += urllib.urlencode(getsocrata_options['filters'])#.replace('+','%20')
+    generated_url += urllib.urlencode(getsocrata_options['filters']).replace('+','%20')
 
     #socrata SoQL queries
     for key, value in getsocrata_options.iteritems():
