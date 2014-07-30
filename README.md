@@ -10,7 +10,7 @@ Getting Started:
 1. Get the socrata json endpoint for your data. This is a URL (ex - http://data.sfgov.org/resource/7h4w-reyq.json)
 2. Register with Socrata at https://opendata.socrata.com/login and get an app token. You'll use this to access your private rate limit.
 Create an account -> login to your account -> Edit account settings -> App Tokens -> Create new application -> Copy your App token
-3. Create a file called 'key.sh.auth' and copy its contents from the comment in example.config. Add your key as "<public key>"
+3. Create a file called 'key.sh.auth' and copy its contents from the comment in example.sh. Add your key as "<public key>"
 3. Modify sample.config to contain your  url(endpoint), and any filters or SoQL Queries (see the Socrata SODA API documentation).
 4. Use requirements.txt to build an appropriate virtual environment: pip install -r requirements.txt
 5. Run example.sh from bash.
