@@ -48,12 +48,19 @@ def get_socrata_data(token, source_url, output_file):
             print "Request error:", sys.exc_info()[0], "trying", tries, "more times."
             continue
 
-        http_request_history[source_url] = r.status_code
-        if str(r.status_code) == '200':
+        def write_logfile():
+            """str -> file 
+            Takes specific data from api request and writes to log file in json format
+            """
+
             # Write successful attempt to log.
             with open(output_file+".log", "a+") as f:
                 f.write(json.dumps({'time of request': datetime.datetime.now().strftime("%m.%d.%Y,%H:%M:%S"), str(source_url) : str(r.status_code)}) + os.linesep)
-            return r.json()
+
+        http_request_history[source_url] = r.status_code
+        if str(r.status_code) == '200':
+            # Write successful attempt to log.
+            write_logfile()
         else:
             tries -= 1
             print "HTTP Request Failed! Retrying", tries, "more times..."
@@ -67,8 +74,9 @@ def get_socrata_data(token, source_url, output_file):
             status_code = r.status_code
 
         print "Failed:", str(source_url), "Response:", str(status_code)
-        with open(output_file+".log", "a+") as f:
-            f.write(json.dumps({'time of request': datetime.datetime.now().strftime("%m.%d.%Y,%H:%M:%S"), str(source_url) : str(status_code)}) + os.linesep)
+        
+        #write failures to log as well
+        write_logfile()
 
         # if we returned [] then we couldn't tell the difference between a failed response and the end of the data stream.
         return None 
